@@ -1,5 +1,6 @@
 module Compile.Parser
-  ( parseAST
+  ( parseAST,
+    parseNumber
   ) where
 
 import           Compile.AST (AST(..), Expr(..), Op(..), Stmt(..))
@@ -9,6 +10,8 @@ import           Control.Monad.Combinators.Expr
 import           Control.Monad.IO.Class (liftIO)
 import           Data.Functor (void)
 import           Data.Void (Void)
+import           Data.Int (Int32)
+import           Numeric (showHex)
 
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
@@ -21,6 +24,12 @@ parseAST path = do
     Left err -> parserFail $ errorBundlePretty err
     Right ast -> return ast
 
+parseNumber :: String -> Either String Integer
+parseNumber s = do
+  case parse number "<literal>" s of
+    Left err -> Left $ errorBundlePretty err
+    Right n -> Right n
+
 type Parser = Parsec Void String
 
 astParser :: Parser AST
@@ -30,14 +39,16 @@ astParser = do
   reserved "int"
   reserved "main"
   parens $ pure ()
-  braces $ do
+  mainBlock <- braces $ do
     pos <- getSourcePos
     stmts <- many stmt
     return $ Block stmts pos
+  eof
+  return mainBlock
 
 stmt :: Parser Stmt
 stmt = do
-  s <- decl <|> simp <|> ret
+  s <- try decl <|> try simp <|> ret
   semi
   return s
 
@@ -56,14 +67,14 @@ declInit = do
   pos <- getSourcePos
   reserved "int"
   name <- identifier
-  reserved "="
+  void $ symbol "="
   e <- expr
   return $ Init name e pos
 
 simp :: Parser Stmt
 simp = do
   pos <- getSourcePos
-  name <- identifier
+  name <- lvalue
   op <- asnOp
   e <- expr
   return $ Asgn name op e pos
@@ -94,8 +105,8 @@ expr' = parens expr <|> intExpr <|> identExpr
 intExpr :: Parser Expr
 intExpr = do
   pos <- getSourcePos
-  val <- number
-  return $ IntExpr val pos
+  str <- numberLiteral
+  return $ IntExpr str pos
 
 identExpr :: Parser Expr
 identExpr = do
@@ -105,16 +116,20 @@ identExpr = do
 
 opTable :: [[Operator Parser Expr]]
 opTable =
-  [ [Prefix (UnExpr Neg <$ symbol "-")]
+  [ [Prefix (UnExpr Neg <$ manyUnaryOp)]
   , [ InfixL (BinExpr Mul <$ symbol "*")
     , InfixL (BinExpr Div <$ symbol "/")
     , InfixL (BinExpr Mod <$ symbol "%")
     ]
   , [InfixL (BinExpr Add <$ symbol "+"), InfixL (BinExpr Sub <$ symbol "-")]
   ]
+  where
+    -- this allows us to parse `---x` as `-(-(-x))`
+    -- makeExprParser doesn't do this by default
+    manyUnaryOp = foldr1 (.) <$> some (UnExpr Neg <$ symbol "-")
 
 expr :: Parser Expr
-expr = try (makeExprParser expr' opTable) <?> "expression"
+expr = makeExprParser expr' opTable <?> "expression"
 
 -- Lexer starts here, probably worth moving to its own file at some point
 sc :: Parser ()
@@ -138,17 +153,44 @@ braces = between (symbol "{") (symbol "}")
 semi :: Parser ()
 semi = void $ symbol ";"
 
+numberLiteral :: Parser String
+numberLiteral = lexeme (try hexLiteral <|> decLiteral <?> "number")
+
+-- We want to reject leading zeroes, but `0` itself should of course be accepted
+decLiteral :: Parser String
+decLiteral = string "0" <|> (:) <$> oneOf ['1'..'9'] <*> many digitChar
+
+hexLiteral :: Parser String
+hexLiteral = do
+  void $ chunk "0x"
+  digits <- some hexDigitChar
+  return ("0x" ++ digits)
+
 number :: Parser Integer
 number = try hexadecimal <|> decimal <?> "number"
 
 decimal :: Parser Integer
-decimal = lexeme L.decimal
+decimal = do
+  n <- lexeme L.decimal
+  notFollowedBy alphaNumChar
+  if n < maxInt
+    then return n
+    else if n == maxInt
+           then return (-maxInt)
+           else fail $ "Decimal literal out of bounds: " ++ show n
+  where maxInt = 2^(31 :: Integer)
 
 hexadecimal :: Parser Integer
-hexadecimal = char '0' >> char 'x' >> lexeme L.hexadecimal
+hexadecimal = do
+  void $ chunk "0x"
+  n <- lexeme L.hexadecimal
+  if n > maxHex
+    then fail $ "Hexadecimal literal out of bounds: " ++ "0x" ++ showHex n ""
+    else return $ toInteger ((fromInteger n) :: Int32)
+  where maxHex = 0xFFFFFFFF
 
 reserved :: String -> Parser ()
-reserved w = void (lexeme $ try (string w <* notFollowedBy identLetter))
+reserved w = void $ lexeme $ (string w <* notFollowedBy identLetter)
 
 reservedWords :: [String]
 reservedWords =
@@ -193,10 +235,13 @@ identLetter :: Parser Char
 identLetter = alphaNumChar <|> char '_'
 
 identifier :: Parser String
-identifier = (lexeme . try) (p >>= check)
+identifier = (lexeme .try) (p >>= check)
   where
     p = (:) <$> identStart <*> many identLetter
     check x =
       if x `elem` reservedWords
         then fail (x ++ " is reserved")
         else return x
+
+lvalue :: Parser String
+lvalue = try identifier <|> parens lvalue <?> "lvalue"

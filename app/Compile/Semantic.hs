@@ -3,6 +3,7 @@ module Compile.Semantic
   ) where
 
 import           Compile.AST (AST(..), Expr(..), Stmt(..), posPretty)
+import           Compile.Parser (parseNumber)
 import           Error (L1ExceptT, semanticFail)
 
 import           Control.Monad (unless, when)
@@ -33,9 +34,6 @@ varStatusAnalysis :: AST -> L1ExceptT Namespace
 varStatusAnalysis (Block stmts _) = do
   execStateT (mapM_ checkStmt stmts) Map.empty
 
-maxInt :: Integer
-maxInt = 2 ^ (31 :: Integer)
-
 -- So far this checks:
 -- + we cannot declare a variable again that has already been declared or initialized
 -- + we cannot initialize a variable again that has already been declared or initialized
@@ -57,23 +55,45 @@ checkStmt (Init name e pos) = do
     $ "Variable " ++ name ++ " redeclared (initialized) at: " ++ posPretty pos
   checkExpr e
   put $ Map.insert name Initialized ns
-checkStmt (Asgn name _ e pos) = do
+checkStmt (Asgn name op e pos) = do
   ns <- get
-  unless (Map.member name ns)
-    $ semanticFail'
-    $ "Trying to assign to undeclared variable "
-        ++ name
-        ++ " at: "
-        ++ posPretty pos
-  checkExpr e
-  put $ Map.insert name Initialized ns
+  case op of
+    Nothing -> do
+      -- Assignment with `=`
+      -- If we assign to a variable with `=`, it has to be either declared or initialized
+      unless (Map.member name ns)
+        $ semanticFail'
+        $ "Trying to assign to undeclared variable "
+            ++ name
+            ++ " at: "
+            ++ posPretty pos
+      checkExpr e
+      put $ Map.insert name Initialized ns
+    Just _
+    -- Assinging with op, e.g. `x += 3`,
+    -- for this x needs to be intialized, not just declasred
+     ->
+      case Map.lookup name ns of
+        Just Initialized -> do
+          checkExpr e
+        _ ->
+          semanticFail'
+            $ "Trying to assignOp to undeclared variable "
+                ++ name
+                ++ " at: "
+                ++ posPretty pos
+
+
 checkStmt (Ret e _) = checkExpr e
 
 checkExpr :: Expr -> L1Semantic ()
-checkExpr (IntExpr n pos) = do
-  when (n < 0 || n > maxInt)
-    $ semanticFail'
-    $ "Integer literal " ++ show n ++ " out of bounds at: " ++ posPretty pos
+checkExpr (IntExpr str pos) = do
+  -- Check that literals are in bounds
+  let res = parseNumber str
+  case res of
+    Left e -> do
+      semanticFail' $ "Error in " ++ posPretty pos ++ e
+    Right _ -> return ()
 checkExpr (Ident name pos) = do
   ns <- get
   case Map.lookup name ns of

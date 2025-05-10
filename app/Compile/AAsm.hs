@@ -3,6 +3,7 @@ module Compile.AAsm
   ) where
 
 import           Compile.AST (AST(..), Expr(..), Stmt(..), showAsgnOp)
+import           Compile.Parser (parseNumber)
 
 import           Control.Monad.State
 import qualified Data.Map as Map
@@ -45,7 +46,7 @@ lookupVar name = do
   m <- gets regMap
   case Map.lookup name m of
     Just r -> return r
-    Nothing -> error "unreachable, fix your semantic analysis I guess"
+    Nothing -> unreachable "lookupVar"
 
 emit :: String -> CodeGen ()
 emit instr = modify $ \s -> s {code = code s ++ [instr]}
@@ -69,10 +70,13 @@ genStmt (Ret e _) = do
   emit $ "ret " ++ regName r
 
 genExpr :: Expr -> CodeGen Register
-genExpr (IntExpr n _) = do
-  r <- freshReg
-  emit $ regName r ++ " = " ++ show n
-  return r
+genExpr (IntExpr str _) = do
+  case parseNumber str of
+    Left err -> unreachable err
+    Right val -> do
+      r <- freshReg
+      emit $ regName r ++ " = " ++ show val
+      return r
 genExpr (Ident name _) = lookupVar name
 genExpr (UnExpr op e) = do
   r1 <- genExpr e
@@ -85,3 +89,6 @@ genExpr (BinExpr op e1 e2) = do
   r <- freshReg
   emit $ regName r ++ " = " ++ regName r1 ++ " " ++ show op ++ " " ++ regName r2
   return r
+
+unreachable :: String -> a
+unreachable e = error $ "Unreachable, fix your semantic analysis: " ++ e
