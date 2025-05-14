@@ -1,6 +1,7 @@
 package edu.kit.kastel.vads.compiler;
 
 import edu.kit.kastel.vads.compiler.backend.aasm.CodeGenerator;
+import edu.kit.kastel.vads.compiler.backend.aasm.OldCodeGen;
 import edu.kit.kastel.vads.compiler.ir.IrGraph;
 import edu.kit.kastel.vads.compiler.ir.SsaTranslation;
 import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering;
@@ -19,8 +20,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.Operation;
+import edu.kit.kastel.vads.compiler.backend.regalloc.x86_64RegisterAllocator;
+
 public class Main {
     public static void main(String[] args) throws IOException {
+        String preamble = ".global main \n.global _main\n.text\nmain:\ncall _main \nmovq %rax, %rdi\nmovq $0x3C, %rax \nsyscall\n_main:\n";
         if (args.length != 2) {
             System.err.println("Invalid arguments: Expected one input file and one output file");
             System.exit(3);
@@ -49,9 +54,10 @@ public class Main {
             }
         }
 
-        // TODO: generate assembly and invoke gcc instead of generating abstract assembly
-        String s = new CodeGenerator().generateCode(graphs);
-        Files.writeString(output, s);
+        String codeOld = new OldCodeGen().generateCode(graphs);
+        List<Operation> operationList = new CodeGenerator().generatePseudoAssembly(graphs);
+        String assembly = new x86_64RegisterAllocator().allocateRegisters(operationList);
+        Files.writeString(output, preamble + assembly);
     }
 
     private static ProgramTree lexAndParse(Path input) throws IOException {
@@ -69,8 +75,8 @@ public class Main {
 
     private static void dumpGraph(IrGraph graph, Path path, String key) throws IOException {
         Files.writeString(
-            path.resolve(graph.name() + "-" + key + ".vcg"),
-            YCompPrinter.print(graph)
+                path.resolve(graph.name() + "-" + key + ".vcg"),
+                YCompPrinter.print(graph)
         );
     }
 }
