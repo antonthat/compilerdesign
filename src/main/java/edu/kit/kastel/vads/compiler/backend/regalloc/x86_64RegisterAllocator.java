@@ -51,6 +51,7 @@ public class x86_64RegisterAllocator {
             for (X86_64Register matchRegister : X86_64Registers) {
                 if (coloring.get(register) == matchRegister.getColor()) {
                     registerMapping.put(register, matchRegister);
+                    //System.out.println("Register: " + register + " -> " + matchRegister + " color: " + coloring.get(register));
                 }
             }
         }

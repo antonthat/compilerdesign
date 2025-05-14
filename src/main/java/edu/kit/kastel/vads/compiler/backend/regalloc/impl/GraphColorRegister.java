@@ -55,7 +55,7 @@ public class GraphColorRegister {
             while (usedColors.contains(lowestAvailable)) {
                 lowestAvailable++;
             }
-            if (lowestAvailable > 13) {
+            if (lowestAvailable > 11) {
                 color.put(vi, -2);
             } else {
                 color.put(vi, lowestAvailable);
