@@ -4,7 +4,7 @@ public record RSPRegister(int offset) implements Register {
 
     @Override
     public String toString() {
-        return String.valueOf(offset) + "(%rsp)";
+        return String.valueOf(offset) + "(%esp)";
     }
 
 }

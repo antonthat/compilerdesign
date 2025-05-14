@@ -10,7 +10,7 @@ public class RetOperation extends Operation {
     }
     @Override
     public String toString() {
-        return "mov " + src.toString() + ",%rax\nret";
+        return "mov " + src.toString() + ",%eax\nret";
     }
 
     public List<Register> getUsed() {

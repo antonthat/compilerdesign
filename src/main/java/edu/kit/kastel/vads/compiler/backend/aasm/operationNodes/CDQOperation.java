@@ -10,7 +10,7 @@ public class CDQOperation extends Operation {
 
     @Override
     public String toString() {
-        return "cqo";
+        return "cdq";
     }
 
     public List<Register> getUsed() {
