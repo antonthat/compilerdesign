@@ -1,7 +1,6 @@
 package edu.kit.kastel.vads.compiler;
 
 import edu.kit.kastel.vads.compiler.backend.aasm.CodeGenerator;
-import edu.kit.kastel.vads.compiler.backend.aasm.OldCodeGen;
 import edu.kit.kastel.vads.compiler.ir.IrGraph;
 import edu.kit.kastel.vads.compiler.ir.SsaTranslation;
 import edu.kit.kastel.vads.compiler.ir.optimize.LocalValueNumbering;
@@ -54,7 +53,6 @@ public class Main {
             }
         }
 
-        String codeOld = new OldCodeGen().generateCode(graphs);
         List<Operation> operationList = new CodeGenerator().generatePseudoAssembly(graphs);
         String assembly = new x86_64RegisterAllocator().allocateRegisters(operationList);
         Files.writeString(output, preamble + assembly);
