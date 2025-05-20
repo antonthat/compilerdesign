@@ -36,12 +36,20 @@ public class Lexer {
             case '{' -> separator(SeparatorType.BRACE_OPEN);
             case '}' -> separator(SeparatorType.BRACE_CLOSE);
             case ';' -> separator(SeparatorType.SEMICOLON);
+            case ':' -> separator(SeparatorType.COLON);
+            case '?' -> separator(SeparatorType.TERNARY);
+            case '~' -> new Operator(OperatorType.NOT, buildSpan(1));
+            case '&' -> bitwiseOrBooleanOrAssign(OperatorType.BIT_AND, OperatorType.LOGIC_AND, OperatorType.ASSIGN_BIT_AND);
+            case '>' -> compOrShiftOrAssign(OperatorType.GT, OperatorType.RSHIFT, OperatorType.ASSIGN_RSHIFT);
+            case '<' -> compOrShiftOrAssign(OperatorType.LT, OperatorType.LSHIFT, OperatorType.ASSIGN_LSHIFT);
+            case '^' -> singleOrAssign(OperatorType.BIT_XOR, OperatorType.ASSIGN_BIT_XOR);
+            case '|' -> bitwiseOrBooleanOrAssign(OperatorType.BIT_OR, OperatorType.LOGIC_OR, OperatorType.ASSIGN_BIT_OR);
             case '-' -> singleOrAssign(OperatorType.MINUS, OperatorType.ASSIGN_MINUS);
             case '+' -> singleOrAssign(OperatorType.PLUS, OperatorType.ASSIGN_PLUS);
             case '*' -> singleOrAssign(OperatorType.MUL, OperatorType.ASSIGN_MUL);
             case '/' -> singleOrAssign(OperatorType.DIV, OperatorType.ASSIGN_DIV);
             case '%' -> singleOrAssign(OperatorType.MOD, OperatorType.ASSIGN_MOD);
-            case '=' -> new Operator(OperatorType.ASSIGN, buildSpan(1));
+            case '=' -> singleOrAssign(OperatorType.ASSIGN, OperatorType.EQUALS);
             default -> {
                 if (isIdentifierChar(peek())) {
                     if (isNumeric(peek())) {
@@ -175,9 +183,9 @@ public class Lexer {
 
     private boolean isIdentifierChar(char c) {
         return c == '_'
-            || c >= 'a' && c <= 'z'
-            || c >= 'A' && c <= 'Z'
-            || c >= '0' && c <= '9';
+                || c >= 'a' && c <= 'z'
+                || c >= 'A' && c <= 'Z'
+                || c >= '0' && c <= '9';
     }
 
     private boolean isNumeric(char c) {
@@ -193,6 +201,26 @@ public class Lexer {
             return new Operator(assign, buildSpan(2));
         }
         return new Operator(single, buildSpan(1));
+    }
+
+    private Token bitwiseOrBooleanOrAssign(OperatorType bit, OperatorType bool, OperatorType assign) {
+        if (hasMore(1) && peek(1) == peek(0)) {
+            return new Operator(bool, buildSpan(2));
+        }
+        if (hasMore(1) && peek(1) == '=') {
+            return new Operator(assign, buildSpan(2));
+        }
+        return new Operator(bit, buildSpan(1));
+    }
+
+    private Token compOrShiftOrAssign(OperatorType comp, OperatorType shift, OperatorType assign) {
+        if (hasMore(1) && peek(1) == peek(0)) {
+            if (hasMore(2) && peek(2) == '=') {
+                return new Operator(assign, buildSpan(3));
+            }
+            return new Operator(shift, buildSpan(2));
+        }
+        return new Operator(comp, buildSpan(1));
     }
 
     private Span buildSpan(int proceed) {

@@ -15,6 +15,22 @@ public record Operator(OperatorType type, Span span) implements Token {
     }
 
     public enum OperatorType {
+        LT("<"),
+        LSHIFT("<<"),
+        ASSIGN_LSHIFT("<<="),
+        GT(">"),
+        RSHIFT(">>"),
+        ASSIGN_RSHIFT(">>="),
+        ASSIGN_BIT_XOR("^="),
+        BIT_XOR("^"),
+        ASSIGN_BIT_OR("|"),
+        BIT_OR("|"),
+        LOGIC_OR("||"),
+        ASSIGN_BIT_AND("&="),
+        BIT_AND("&"),
+        LOGIC_AND("&&"),
+        EQUALS("=="),
+        NOT("~"),
         ASSIGN_MINUS("-="),
         MINUS("-"),
         ASSIGN_PLUS("+="),
