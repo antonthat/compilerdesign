@@ -15,6 +15,8 @@ public record Operator(OperatorType type, Span span) implements Token {
     }
 
     public enum OperatorType {
+        INEQUAL("!="),
+        LOGIC_NOT("!"),
         LT("<"),
         LSHIFT("<<"),
         ASSIGN_LSHIFT("<<="),
@@ -30,7 +32,7 @@ public record Operator(OperatorType type, Span span) implements Token {
         BIT_AND("&"),
         LOGIC_AND("&&"),
         EQUALS("=="),
-        NOT("~"),
+        BIT_NOT("~"),
         ASSIGN_MINUS("-="),
         MINUS("-"),
         ASSIGN_PLUS("+="),

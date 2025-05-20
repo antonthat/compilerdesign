@@ -38,11 +38,12 @@ public class Lexer {
             case ';' -> separator(SeparatorType.SEMICOLON);
             case ':' -> separator(SeparatorType.COLON);
             case '?' -> separator(SeparatorType.TERNARY);
-            case '~' -> new Operator(OperatorType.NOT, buildSpan(1));
+            case '~' -> new Operator(OperatorType.BIT_NOT, buildSpan(1));
             case '&' -> bitwiseOrBooleanOrAssign(OperatorType.BIT_AND, OperatorType.LOGIC_AND, OperatorType.ASSIGN_BIT_AND);
             case '>' -> compOrShiftOrAssign(OperatorType.GT, OperatorType.RSHIFT, OperatorType.ASSIGN_RSHIFT);
             case '<' -> compOrShiftOrAssign(OperatorType.LT, OperatorType.LSHIFT, OperatorType.ASSIGN_LSHIFT);
             case '^' -> singleOrAssign(OperatorType.BIT_XOR, OperatorType.ASSIGN_BIT_XOR);
+            case '!' -> singleOrAssign(OperatorType.LOGIC_NOT, OperatorType.INEQUAL);
             case '|' -> bitwiseOrBooleanOrAssign(OperatorType.BIT_OR, OperatorType.LOGIC_OR, OperatorType.ASSIGN_BIT_OR);
             case '-' -> singleOrAssign(OperatorType.MINUS, OperatorType.ASSIGN_MINUS);
             case '+' -> singleOrAssign(OperatorType.PLUS, OperatorType.ASSIGN_PLUS);
