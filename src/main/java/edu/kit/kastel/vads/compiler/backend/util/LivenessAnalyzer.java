@@ -7,10 +7,14 @@ import java.util.HashSet;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Collections;
 
 import edu.kit.kastel.vads.compiler.backend.regalloc.Register;
 import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.Operation;
+import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.LabelOperation;
 import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.RetOperation;
+import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.JeOperation;
+import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.JumpOperation;
 import edu.kit.kastel.vads.compiler.backend.regalloc.impl.InferenceGraph;
 
 public class LivenessAnalyzer {
@@ -18,6 +22,7 @@ public class LivenessAnalyzer {
     private Set<Register>[] use;
     private Register[] def;
     private Set<Integer>[] succ;
+    private Map<String, Integer> labelToIndex;
 
     public Set<Register>[] getLive() {
         return live;
@@ -38,8 +43,15 @@ public class LivenessAnalyzer {
         use = new Set[operationList.size()];
         def = new Register[operationList.size()];
         succ = new Set[operationList.size()];
+        labelToIndex = new HashMap<>();
 
-        // double pass enough due to missing control flow
+        for (int i = 0; i < operationList.size(); i++) {
+            Operation op = operationList.get(i);
+            if (op instanceof LabelOperation) {
+                labelToIndex.put(((LabelOperation)op).toString(), i);
+            }
+        }
+
         for (int operationIndex = operationList.size() - 1; operationIndex >= 0; operationIndex--) {
             Operation operation = operationList.get(operationIndex);
             List<Register> registerList = operation.getRegisters();
@@ -49,25 +61,60 @@ public class LivenessAnalyzer {
             use[operationIndex].addAll(operation.getUsed());
             def[operationIndex] = operation.getDst();
             succ[operationIndex] = new HashSet<>();
-            // TODO change for control flow goto
-            if (!(operation instanceof RetOperation)) {
-                succ[operationIndex].add(operationIndex + 1);
+            buildSuccessors(operation, operationIndex, operationList);
+        }
+
+
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+
+            for (int operationIndex = operationList.size() - 1; operationIndex >= 0; operationIndex--) {
+                Set<Register> oldLive = new HashSet<>(live[operationIndex] != null ? live[operationIndex] : Collections.emptySet());
+
+                live[operationIndex] = new HashSet<>();
+                live[operationIndex].addAll(use[operationIndex]);
+
+                for (int succIndex : succ[operationIndex]) {
+                    if (succIndex < operationList.size() && live[succIndex] != null) {
+                        for (Register liveReg : live[succIndex]) {
+                            if (!liveReg.equals(def[operationIndex])) {
+                                live[operationIndex].add(liveReg);
+                            }
+                        }
+                    }
+                }
+
+                if (!oldLive.equals(live[operationIndex])) {
+                    changed = true;
+                }
             }
         }
 
-        // second pass for liveness extraction
-        for (int operationIndex = operationList.size() - 1; operationIndex >= 0; operationIndex--) {
-            live[operationIndex] = new HashSet<>();
-            for (Register liveReg : use[operationIndex]) {
-                live[operationIndex].add(liveReg);
-            }
+    }
 
-            for (int succIndex : succ[operationIndex]) {
-                Operation succOp = operationList.get(succIndex);
-                for (Register liveReg : live[succIndex]) {
-                    if (def[operationIndex] != liveReg) {
-                        live[operationIndex].add(liveReg);
-                    }
+    private void buildSuccessors(Operation operation, int operationIndex, List<Operation> operationList) {
+        switch (operation) {
+            case JumpOperation jump -> {
+                Integer targetIndex = labelToIndex.get(jump.getTarget());
+                if (targetIndex != null) {
+                    succ[operationIndex].add(targetIndex);
+                }
+            }
+            case JeOperation je -> {
+                Integer targetIndex = labelToIndex.get(je.getTarget());
+                if (targetIndex != null) {
+                    succ[operationIndex].add(targetIndex);
+                }
+                if (operationIndex + 1 < operationList.size()) {
+                    succ[operationIndex].add(operationIndex + 1);
+                }
+            }
+            case RetOperation ret -> {
+            }
+            default -> {
+                if (operationIndex + 1 < operationList.size()) {
+                    succ[operationIndex].add(operationIndex + 1);
                 }
             }
         }

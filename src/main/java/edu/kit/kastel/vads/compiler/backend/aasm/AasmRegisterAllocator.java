@@ -8,6 +8,7 @@ import edu.kit.kastel.vads.compiler.ir.node.Node;
 import edu.kit.kastel.vads.compiler.ir.node.ProjNode;
 import edu.kit.kastel.vads.compiler.ir.node.ReturnNode;
 import edu.kit.kastel.vads.compiler.ir.node.StartNode;
+import edu.kit.kastel.vads.compiler.ir.node.JumpNode;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,24 +21,35 @@ public class AasmRegisterAllocator implements RegisterAllocator {
 
     @Override
     public Map<Node, Register> allocateRegisters(IrGraph graph) {
-        Set<Node> visited = new HashSet<>();
-        visited.add(graph.endBlock());
-        scan(graph.endBlock(), visited);
+        for (Block block : graph.getBlocks()) {
+            generateForBlock(block);
+        }
         return Map.copyOf(this.registers);
     }
 
-    private void scan(Node node, Set<Node> visited) {
-        for (Node predecessor : node.predecessors()) {
-            if (visited.add(predecessor)) {
-                scan(predecessor, visited);
-            }
+    private void generateForGraph(IrGraph graph) {
+        for (Block block : graph.getBlocks()) {
+            generateForBlock(block);
         }
+    }
+
+    private void generateForBlock(Block block) {
+        for (Node node : block.schedule()) {
+            scan(node);
+        }
+        for (Node node : block.getPhis()) {
+            scan(node);
+        }
+    }
+
+
+    private void scan(Node node) {
         if (needsRegister(node)) {
             this.registers.put(node, new VirtualRegister(this.id++));
         }
     }
 
     private static boolean needsRegister(Node node) {
-        return !(node instanceof ProjNode || node instanceof StartNode || node instanceof Block || node instanceof ReturnNode);
+        return !(node instanceof ProjNode || node instanceof StartNode || node instanceof Block || node instanceof JumpNode);
     }
 }

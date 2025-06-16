@@ -17,7 +17,8 @@ public enum X86_64Register implements Register {
     R12("r12d",-4),
     R13("r13d",9),
     R14("r14d",10),
-    R15("r15d",11);
+    R15("r15d",11),
+    CL("cl",-4);
 
   String name;
   int color;

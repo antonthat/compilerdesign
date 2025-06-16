@@ -1,17 +1,33 @@
 package edu.kit.kastel.vads.compiler.ir;
 
+import edu.kit.kastel.vads.compiler.ir.node.Node;
 import edu.kit.kastel.vads.compiler.ir.node.AddNode;
 import edu.kit.kastel.vads.compiler.ir.node.Block;
 import edu.kit.kastel.vads.compiler.ir.node.ConstIntNode;
+import edu.kit.kastel.vads.compiler.ir.node.ConstBoolNode;
 import edu.kit.kastel.vads.compiler.ir.node.DivNode;
 import edu.kit.kastel.vads.compiler.ir.node.ModNode;
 import edu.kit.kastel.vads.compiler.ir.node.MulNode;
-import edu.kit.kastel.vads.compiler.ir.node.Node;
+import edu.kit.kastel.vads.compiler.ir.node.BitOrNode;
+import edu.kit.kastel.vads.compiler.ir.node.BitAndNode;
+import edu.kit.kastel.vads.compiler.ir.node.BitNotNode;
+import edu.kit.kastel.vads.compiler.ir.node.BitXorNode;
+import edu.kit.kastel.vads.compiler.ir.node.LShiftNode;
+import edu.kit.kastel.vads.compiler.ir.node.RShiftNode;
 import edu.kit.kastel.vads.compiler.ir.node.Phi;
 import edu.kit.kastel.vads.compiler.ir.node.ProjNode;
 import edu.kit.kastel.vads.compiler.ir.node.ReturnNode;
 import edu.kit.kastel.vads.compiler.ir.node.StartNode;
 import edu.kit.kastel.vads.compiler.ir.node.SubNode;
+import edu.kit.kastel.vads.compiler.ir.node.EqualsNode;
+import edu.kit.kastel.vads.compiler.ir.node.InequalsNode;
+import edu.kit.kastel.vads.compiler.ir.node.GreaterThanNode;
+import edu.kit.kastel.vads.compiler.ir.node.LessThanNode;
+import edu.kit.kastel.vads.compiler.ir.node.GreaterEqualsNode;
+import edu.kit.kastel.vads.compiler.ir.node.LessEqualsNode;
+import edu.kit.kastel.vads.compiler.ir.node.JumpNode;
+import edu.kit.kastel.vads.compiler.ir.node.IfNode;
+import edu.kit.kastel.vads.compiler.ir.node.UndefNode;
 import edu.kit.kastel.vads.compiler.ir.optimize.Optimizer;
 import edu.kit.kastel.vads.compiler.parser.symbol.Name;
 
@@ -19,6 +35,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
 
 class GraphConstructor {
 
@@ -39,6 +58,10 @@ class GraphConstructor {
         sealBlock(this.currentBlock);
     }
 
+    public Block newBlock(String label) {
+        return new Block(this.graph(), label);
+    }
+
     public Node newStart() {
         assert currentBlock() == this.graph.startBlock() : "start must be in start block";
         return new StartNode(currentBlock());
@@ -50,6 +73,33 @@ class GraphConstructor {
     public Node newSub(Node left, Node right) {
         return this.optimizer.transform(new SubNode(currentBlock(), left, right));
     }
+    public Node newEquals(Node left, Node right) {
+        return this.optimizer.transform(new EqualsNode(currentBlock(), left, right));
+    }
+
+    public Node newInequals(Node left, Node right) {
+        return this.optimizer.transform(new InequalsNode(currentBlock(), left, right));
+    }
+    public Node newLessThan(Node left, Node right) {
+        return this.optimizer.transform(new LessThanNode(currentBlock(), left, right));
+    }
+
+    public Node newGreaterThan(Node left, Node right) {
+        return this.optimizer.transform(new GreaterThanNode(currentBlock(), left, right));
+    }
+
+
+    public Node newBitNot(Node node) {
+        return this.optimizer.transform(new BitNotNode(currentBlock(), node));
+    }
+
+    public Node newLessEquals(Node left, Node right) {
+        return this.optimizer.transform(new LessEqualsNode(currentBlock(), left, right));
+    }
+
+    public Node newGreaterEquals(Node left, Node right) {
+        return this.optimizer.transform(new GreaterEqualsNode(currentBlock(), left, right));
+    }
 
     public Node newMul(Node left, Node right) {
         return this.optimizer.transform(new MulNode(currentBlock(), left, right));
@@ -57,6 +107,26 @@ class GraphConstructor {
 
     public Node newDiv(Node left, Node right) {
         return this.optimizer.transform(new DivNode(currentBlock(), left, right, readCurrentSideEffect()));
+    }
+
+    public Node newBitAnd(Node left, Node right) {
+        return this.optimizer.transform(new BitAndNode(currentBlock(), left, right));
+    }
+
+    public Node newBitOr(Node left, Node right) {
+        return this.optimizer.transform(new BitOrNode(currentBlock(), left, right));
+    }
+
+    public Node newBitXor(Node left, Node right) {
+        return this.optimizer.transform(new BitXorNode(currentBlock(), left, right));
+    }
+
+    public Node newRShift(Node left, Node right) {
+        return this.optimizer.transform(new RShiftNode(currentBlock(), left, right));
+    }
+
+    public Node newLShift(Node left, Node right) {
+        return this.optimizer.transform(new LShiftNode(currentBlock(), left, right));
     }
 
     public Node newMod(Node left, Node right) {
@@ -73,8 +143,30 @@ class GraphConstructor {
         return this.optimizer.transform(new ConstIntNode(this.graph.startBlock(), value));
     }
 
+    public Node newConstBool(boolean value) {
+        // always move const into start block, this allows better deduplication
+        // and resultingly in better value numbering
+        return this.optimizer.transform(new ConstBoolNode(this.graph.startBlock(), value));
+    }
+
+
+    public Node newJump(Block block) {
+        return this.optimizer.transform(new JumpNode(currentBlock(),block));
+    }
+
     public Node newSideEffectProj(Node node) {
         return new ProjNode(currentBlock(), node, ProjNode.SimpleProjectionInfo.SIDE_EFFECT);
+    }
+
+    public Node newIfNode(Node node, Block thenBlock, Block elseBlock) {
+        return this.optimizer.transform(new IfNode(currentBlock(), node, thenBlock, elseBlock));
+    }
+    public Node newIfTrueProj(Node node) {
+        return new ProjNode(currentBlock(), node, ProjNode.SimpleProjectionInfo.IF_TRUE_BRANCH);
+    }
+
+    public Node newIfFalseProj(Node node) {
+        return new ProjNode(currentBlock(), node, ProjNode.SimpleProjectionInfo.IF_FALSE_BRANCH);
     }
 
     public Node newResultProj(Node node) {
@@ -83,6 +175,10 @@ class GraphConstructor {
 
     public Block currentBlock() {
         return this.currentBlock;
+    }
+
+    public void changeCurrentBlock(Block block) {
+        this.currentBlock = block;
     }
 
     public Phi newPhi() {
@@ -125,16 +221,36 @@ class GraphConstructor {
 
     Node addPhiOperands(Name variable, Phi phi) {
         for (Node pred : phi.block().predecessors()) {
-            phi.appendOperand(readVariable(variable, pred.block()));
+            Node operand = readVariable(variable, pred.block());
+            if (!(operand instanceof UndefNode)) {
+                phi.appendOperand(operand);
+            }
         }
         return tryRemoveTrivialPhi(phi);
     }
 
+    // probably broken
     Node tryRemoveTrivialPhi(Phi phi) {
-        // TODO: the paper shows how to remove trivial phis.
-        // as this is not a problem in Lab 1 and it is just
-        // a simplification, we recommend to implement this
-        // part yourself.
+        List<? extends Node> preds = new ArrayList<>(phi.predecessors());
+        preds.remove(phi);
+
+        if (preds.isEmpty()) {
+            return new UndefNode(currentBlock());
+        } else if (preds.size() == 1) {
+            Node replacement = preds.getFirst();
+            for (Node succ : graph.successors(phi)) {
+                for (int i = 0; i < succ.predecessors().size(); i++) {
+                    if (succ.predecessors().get(i).equals(phi)) {
+                        succ.setPredecessor(i, replacement);
+                        if (succ instanceof Phi succPhi && sealedBlocks.contains(succ.block())) {
+                            tryRemoveTrivialPhi(succPhi);
+                        }
+                    }
+                }
+            }
+
+            return replacement;
+        }
         return phi;
     }
 
@@ -162,6 +278,12 @@ class GraphConstructor {
         if (node != null) {
             return node;
         }
+
+        Phi sideEffectPhi = this.incompleteSideEffectPhis.get(block);
+        if (sideEffectPhi != null) {
+            addPhiOperands(sideEffectPhi);
+        }
+
         return readSideEffectRecursive(block);
     }
 
@@ -188,5 +310,6 @@ class GraphConstructor {
         }
         return tryRemoveTrivialPhi(phi);
     }
+
 
 }

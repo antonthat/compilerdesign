@@ -9,10 +9,17 @@ import edu.kit.kastel.vads.compiler.parser.ast.IdentExpressionTree;
 import edu.kit.kastel.vads.compiler.parser.ast.LValueIdentTree;
 import edu.kit.kastel.vads.compiler.parser.ast.LiteralTree;
 import edu.kit.kastel.vads.compiler.parser.ast.NameTree;
-import edu.kit.kastel.vads.compiler.parser.ast.NegateTree;
 import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree;
 import edu.kit.kastel.vads.compiler.parser.ast.ReturnTree;
 import edu.kit.kastel.vads.compiler.parser.ast.TypeTree;
+import edu.kit.kastel.vads.compiler.parser.ast.BoolLiteralTree;
+import edu.kit.kastel.vads.compiler.parser.ast.BreakTree;
+import edu.kit.kastel.vads.compiler.parser.ast.ConditionalTree;
+import edu.kit.kastel.vads.compiler.parser.ast.ContinueTree;
+import edu.kit.kastel.vads.compiler.parser.ast.ForTree;
+import edu.kit.kastel.vads.compiler.parser.ast.TernaryOperationTree;
+import edu.kit.kastel.vads.compiler.parser.ast.UnaryOperationTree;
+import edu.kit.kastel.vads.compiler.parser.ast.WhileTree;
 
 /// A visitor that does nothing and returns [Unit#INSTANCE] by default.
 /// This can be used to implement operations only for specific tree types.
@@ -35,6 +42,31 @@ public interface NoOpVisitor<T> extends Visitor<T, Unit> {
 
     @Override
     default Unit visit(DeclarationTree declarationTree, T data) {
+        return Unit.INSTANCE;
+    }
+
+    @Override
+    default Unit visit(BoolLiteralTree boolLiteralTree, T data) {
+        return Unit.INSTANCE;
+    }
+
+    @Override
+    default Unit visit(BreakTree breakTree, T data) {
+        return Unit.INSTANCE;
+    }
+
+    @Override
+    default Unit visit(ConditionalTree conditionalTree, T data) {
+        return Unit.INSTANCE;
+    }
+
+    @Override
+    default Unit visit(ContinueTree continueTree, T data) {
+        return Unit.INSTANCE;
+    }
+
+    @Override
+    default Unit visit(ForTree forTree, T data) {
         return Unit.INSTANCE;
     }
 
@@ -64,11 +96,6 @@ public interface NoOpVisitor<T> extends Visitor<T, Unit> {
     }
 
     @Override
-    default Unit visit(NegateTree negateTree, T data) {
-        return Unit.INSTANCE;
-    }
-
-    @Override
     default Unit visit(ProgramTree programTree, T data) {
         return Unit.INSTANCE;
     }
@@ -79,7 +106,22 @@ public interface NoOpVisitor<T> extends Visitor<T, Unit> {
     }
 
     @Override
+    default Unit visit(TernaryOperationTree ternaryOperationTree, T data) {
+        return Unit.INSTANCE;
+    }
+
+    @Override
     default Unit visit(TypeTree typeTree, T data) {
+        return Unit.INSTANCE;
+    }
+
+    @Override
+    default Unit visit(UnaryOperationTree unaryOperationTree, T data) {
+        return Unit.INSTANCE;
+    }
+
+    @Override
+    default Unit visit(WhileTree whileTree, T data) {
         return Unit.INSTANCE;
     }
 }

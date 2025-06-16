@@ -4,7 +4,7 @@ import edu.kit.kastel.vads.compiler.lexer.Operator;
 import edu.kit.kastel.vads.compiler.Span;
 import edu.kit.kastel.vads.compiler.parser.visitor.Visitor;
 
-public record AssignmentTree(LValueTree lValue, Operator operator, ExpressionTree expression) implements StatementTree {
+public record AssignmentTree(LValueTree lValue, Operator operator, ExpressionTree expression) implements SimpleTree {
     @Override
     public Span span() {
         return lValue().span().merge(expression().span());

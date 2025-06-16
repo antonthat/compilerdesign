@@ -19,15 +19,8 @@ import edu.kit.kastel.vads.compiler.backend.regalloc.impl.InferenceGraph;
 import edu.kit.kastel.vads.compiler.backend.regalloc.X86_64Register;
 import edu.kit.kastel.vads.compiler.backend.regalloc.RSPRegister;
 
-import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.AddOperation;
-import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.ConstMovOperation;
-import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.MovOperation;
-import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.MulOperation;
-import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.Operation;
-import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.RetOperation;
-import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.SubOperation;
-import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.DivOperation;
-import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.CDQOperation;
+import edu.kit.kastel.vads.compiler.backend.aasm.operationNodes.*;
+
 
 
 public class RegisterSpilling {
@@ -114,6 +107,98 @@ public class RegisterSpilling {
                     else {movNode = new MovOperation(mov.getSrc(), new RSPRegister(rspOffset.get(dstSpill)));}
                         operationList.set(operationSlot, movNode);
                     }
+                    case BitAndOperation bitAnd -> {
+                        if (srcSpill != null) {
+                            Operation bitAndNode = new BitAndOperation(new RSPRegister(rspOffset.get(srcSpill)), bitAnd.getDst());
+                            operationList.set(operationSlot, bitAndNode);
+                        } else {
+                            Operation bitAndNode = new BitAndOperation(bitAnd.getSrc(), new RSPRegister(rspOffset.get(dstSpill)));
+                            operationList.set(operationSlot, bitAndNode);
+                        }
+                    }
+                    case BitOrOperation bitOr -> {
+                        if (srcSpill != null) {
+                            Operation bitOrNode = new BitOrOperation(new RSPRegister(rspOffset.get(srcSpill)), bitOr.getDst());
+                            operationList.set(operationSlot, bitOrNode);
+                        } else {
+                            Operation bitOrNode = new BitOrOperation(bitOr.getSrc(), new RSPRegister(rspOffset.get(dstSpill)));
+                            operationList.set(operationSlot, bitOrNode);
+                        }
+                    }
+                    case BitXorOperation bitXor -> {
+                        if (srcSpill != null) {
+                            Operation bitXorNode = new BitXorOperation(new RSPRegister(rspOffset.get(srcSpill)), bitXor.getDst());
+                            operationList.set(operationSlot, bitXorNode);
+                        } else {
+                            Operation bitXorNode = new BitXorOperation(bitXor.getSrc(), new RSPRegister(rspOffset.get(dstSpill)));
+                            operationList.set(operationSlot, bitXorNode);
+                        }
+                    }
+                    case BitNotOperation bitNot -> {
+                        // BitNot is unary, so only dst can be spilled
+                        Operation bitNotNode = new BitNotOperation(new RSPRegister(rspOffset.get(dstSpill)));
+                        operationList.set(operationSlot, bitNotNode);
+                    }
+                    case CMPOperation cmp -> {
+                        if (srcSpill != null) {
+                            Operation cmpNode = new CMPOperation(new RSPRegister(rspOffset.get(srcSpill)), cmp.getDst());
+                            operationList.set(operationSlot, cmpNode);
+                        } else {
+                            Operation cmpNode = new CMPOperation(cmp.getSrc(), new RSPRegister(rspOffset.get(dstSpill)));
+                            operationList.set(operationSlot, cmpNode);
+                        }
+                    }
+                    case TestOperation test -> {
+                        if (srcSpill != null) {
+                            Operation testNode = new TestOperation(new RSPRegister(rspOffset.get(srcSpill)), test.getDst());
+                            operationList.set(operationSlot, testNode);
+                        } else {
+                            Operation testNode = new TestOperation(test.getSrc(), new RSPRegister(rspOffset.get(dstSpill)));
+                            operationList.set(operationSlot, testNode);
+                        }
+                    }
+                    case SalOperation sal -> {
+                        if (srcSpill != null) {
+                            Operation salNode = new SalOperation(new RSPRegister(rspOffset.get(srcSpill)), sal.getDst());
+                            operationList.set(operationSlot, salNode);
+                        } else {
+                            Operation salNode = new SalOperation(sal.getSrc(), new RSPRegister(rspOffset.get(dstSpill)));
+                            operationList.set(operationSlot, salNode);
+                        }
+                    }
+                    case SetEOperation setE -> {
+                        Operation setENode = new SetEOperation(new RSPRegister(rspOffset.get(dstSpill)));
+                        operationList.set(operationSlot, setENode);
+                    }
+                    case SetNeOperation setNe -> {
+                        Operation setNeNode = new SetNeOperation(new RSPRegister(rspOffset.get(dstSpill)));
+                        operationList.set(operationSlot, setNeNode);
+                    }
+                    case SetGOperation setG -> {
+                        Operation setGNode = new SetGOperation(new RSPRegister(rspOffset.get(dstSpill)));
+                        operationList.set(operationSlot, setGNode);
+                    }
+                    case SetGeOperation setGe -> {
+                        Operation setGeNode = new SetGeOperation(new RSPRegister(rspOffset.get(dstSpill)));
+                        operationList.set(operationSlot, setGeNode);
+                    }
+                    case SetLOperation setL -> {
+                        Operation setLNode = new SetLOperation(new RSPRegister(rspOffset.get(dstSpill)));
+                        operationList.set(operationSlot, setLNode);
+                    }
+                    case SetLeOperation setLe -> {
+                        Operation setLeNode = new SetLeOperation(new RSPRegister(rspOffset.get(dstSpill)));
+                        operationList.set(operationSlot, setLeNode);
+                    }
+                    case MovzxOperation movzx -> {
+                        if (srcSpill != null) {
+                            Operation movzxNode = new MovzxOperation(new RSPRegister(rspOffset.get(srcSpill)), movzx.getDst());
+                            operationList.set(operationSlot, movzxNode);
+                        } else {
+                            Operation movzxNode = new MovzxOperation(movzx.getSrc(), new RSPRegister(rspOffset.get(dstSpill)));
+                            operationList.set(operationSlot, movzxNode);
+                        }
+                    }
                     default -> {}
                 }
             }
@@ -152,7 +237,64 @@ public class RegisterSpilling {
                         operationListBoundary += 1;
                         operationSlot += 1;
                     }
-                    default -> {}
+                    case BitAndOperation bitAnd -> {
+                        movNode = new MovOperation(new RSPRegister(rspOffset.get(srcSpill)), X86_64Register.R11);
+                        Operation bitAndNode = new BitAndOperation(X86_64Register.R11, new RSPRegister(rspOffset.get(dstSpill)));
+                        operationList.set(operationSlot, movNode);
+                        operationList.add(operationSlot + 1, bitAndNode);
+                        operationListBoundary += 1;
+                        operationSlot += 1;
+                    }
+                    case BitOrOperation bitOr -> {
+                        movNode = new MovOperation(new RSPRegister(rspOffset.get(srcSpill)), X86_64Register.R11);
+                        Operation bitOrNode = new BitOrOperation(X86_64Register.R11, new RSPRegister(rspOffset.get(dstSpill)));
+                        operationList.set(operationSlot, movNode);
+                        operationList.add(operationSlot + 1, bitOrNode);
+                        operationListBoundary += 1;
+                        operationSlot += 1;
+                    }
+                    case BitXorOperation bitXor -> {
+                        movNode = new MovOperation(new RSPRegister(rspOffset.get(srcSpill)), X86_64Register.R11);
+                        Operation bitXorNode = new BitXorOperation(X86_64Register.R11, new RSPRegister(rspOffset.get(dstSpill)));
+                        operationList.set(operationSlot, movNode);
+                        operationList.add(operationSlot + 1, bitXorNode);
+                        operationListBoundary += 1;
+                        operationSlot += 1;
+                    }
+                    case CMPOperation cmp -> {
+                        movNode = new MovOperation(new RSPRegister(rspOffset.get(srcSpill)), X86_64Register.R11);
+                        Operation cmpNode = new CMPOperation(X86_64Register.R11, new RSPRegister(rspOffset.get(dstSpill)));
+                        operationList.set(operationSlot, movNode);
+                        operationList.add(operationSlot + 1, cmpNode);
+                        operationListBoundary += 1;
+                        operationSlot += 1;
+                    }
+                    case TestOperation test -> {
+                        movNode = new MovOperation(new RSPRegister(rspOffset.get(srcSpill)), X86_64Register.R11);
+                        Operation testNode = new TestOperation(X86_64Register.R11, new RSPRegister(rspOffset.get(dstSpill)));
+                        operationList.set(operationSlot, movNode);
+                        operationList.add(operationSlot + 1, testNode);
+                        operationListBoundary += 1;
+                        operationSlot += 1;
+                    }
+                    case SalOperation sal -> {
+                        movNode = new MovOperation(new RSPRegister(rspOffset.get(srcSpill)), X86_64Register.R11);
+                        Operation salNode = new SalOperation(X86_64Register.R11, new RSPRegister(rspOffset.get(dstSpill)));
+                        operationList.set(operationSlot, movNode);
+                        operationList.add(operationSlot + 1, salNode);
+                        operationListBoundary += 1;
+                        operationSlot += 1;
+                    }
+                    case MovzxOperation movzx -> {
+                        movNode = new MovOperation(new RSPRegister(rspOffset.get(srcSpill)), X86_64Register.R11);
+                        Operation movzxNode = new MovzxOperation(X86_64Register.R11, new RSPRegister(rspOffset.get(dstSpill)));
+                        operationList.set(operationSlot, movNode);
+                        operationList.add(operationSlot + 1, movzxNode);
+                        operationListBoundary += 1;
+                        operationSlot += 1;
+                    }
+                    default -> {
+                    }
                 }
             }
         }

@@ -8,17 +8,20 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.SequencedSet;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 
 public class IrGraph {
     private final Map<Node, SequencedSet<Node>> successors = new IdentityHashMap<>();
     private final Block startBlock;
     private final Block endBlock;
     private final String name;
+    private List<Block> blocks = new ArrayList<>();
 
     public IrGraph(String name) {
         this.name = name;
-        this.startBlock = new Block(this);
-        this.endBlock = new Block(this);
+        this.startBlock = new Block(this, "start");
+        this.endBlock = new Block(this, "end");
     }
 
     public void registerSuccessor(Node node, Node successor) {
@@ -38,12 +41,21 @@ public class IrGraph {
         return Set.copyOf(successors);
     }
 
+
     public Block startBlock() {
         return this.startBlock;
     }
 
     public Block endBlock() {
         return this.endBlock;
+    }
+
+    public List<Block> getBlocks() {
+        return List.copyOf(this.blocks);
+    }
+
+    public void addBlock(Block block) {
+        this.blocks.add(block);
     }
 
     /// {@return the name of this graph}

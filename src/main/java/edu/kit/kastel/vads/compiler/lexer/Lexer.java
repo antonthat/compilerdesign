@@ -40,8 +40,8 @@ public class Lexer {
             case '?' -> separator(SeparatorType.TERNARY);
             case '~' -> new Operator(OperatorType.BIT_NOT, buildSpan(1));
             case '&' -> bitwiseOrBooleanOrAssign(OperatorType.BIT_AND, OperatorType.LOGIC_AND, OperatorType.ASSIGN_BIT_AND);
-            case '>' -> compOrShiftOrAssign(OperatorType.GT, OperatorType.RSHIFT, OperatorType.ASSIGN_RSHIFT);
-            case '<' -> compOrShiftOrAssign(OperatorType.LT, OperatorType.LSHIFT, OperatorType.ASSIGN_LSHIFT);
+            case '>' -> compOrShiftOrAssign(OperatorType.GT, OperatorType.GTEQ, OperatorType.RSHIFT, OperatorType.ASSIGN_RSHIFT);
+            case '<' -> compOrShiftOrAssign(OperatorType.LT, OperatorType.LTEQ, OperatorType.LSHIFT, OperatorType.ASSIGN_LSHIFT);
             case '^' -> singleOrAssign(OperatorType.BIT_XOR, OperatorType.ASSIGN_BIT_XOR);
             case '!' -> singleOrAssign(OperatorType.LOGIC_NOT, OperatorType.INEQUAL);
             case '|' -> bitwiseOrBooleanOrAssign(OperatorType.BIT_OR, OperatorType.LOGIC_OR, OperatorType.ASSIGN_BIT_OR);
@@ -214,12 +214,15 @@ public class Lexer {
         return new Operator(bit, buildSpan(1));
     }
 
-    private Token compOrShiftOrAssign(OperatorType comp, OperatorType shift, OperatorType assign) {
+    private Token compOrShiftOrAssign(OperatorType comp, OperatorType compEq, OperatorType shift, OperatorType assign) {
         if (hasMore(1) && peek(1) == peek(0)) {
             if (hasMore(2) && peek(2) == '=') {
                 return new Operator(assign, buildSpan(3));
             }
             return new Operator(shift, buildSpan(2));
+        }
+        if (hasMore(1) && peek(1) == '=') {
+            return new Operator(compEq, buildSpan(2));
         }
         return new Operator(comp, buildSpan(1));
     }

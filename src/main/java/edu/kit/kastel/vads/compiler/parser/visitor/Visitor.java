@@ -9,16 +9,28 @@ import edu.kit.kastel.vads.compiler.parser.ast.IdentExpressionTree;
 import edu.kit.kastel.vads.compiler.parser.ast.LValueIdentTree;
 import edu.kit.kastel.vads.compiler.parser.ast.LiteralTree;
 import edu.kit.kastel.vads.compiler.parser.ast.NameTree;
-import edu.kit.kastel.vads.compiler.parser.ast.NegateTree;
+import edu.kit.kastel.vads.compiler.parser.ast.UnaryOperationTree;
 import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree;
 import edu.kit.kastel.vads.compiler.parser.ast.ReturnTree;
 import edu.kit.kastel.vads.compiler.parser.ast.TypeTree;
+import edu.kit.kastel.vads.compiler.parser.ast.BreakTree;
+import edu.kit.kastel.vads.compiler.parser.ast.ContinueTree;
+import edu.kit.kastel.vads.compiler.parser.ast.ForTree;
+import edu.kit.kastel.vads.compiler.parser.ast.ConditionalTree;
+import edu.kit.kastel.vads.compiler.parser.ast.WhileTree;
+import edu.kit.kastel.vads.compiler.parser.ast.UnaryOperationTree;
+import edu.kit.kastel.vads.compiler.parser.ast.BoolLiteralTree;
+import edu.kit.kastel.vads.compiler.parser.ast.TernaryOperationTree;
+
+
 
 public interface Visitor<T, R> {
 
     R visit(AssignmentTree assignmentTree, T data);
 
     R visit(BinaryOperationTree binaryOperationTree, T data);
+
+    R visit(BoolLiteralTree boolLiteralTree, T data);
 
     R visit(BlockTree blockTree, T data);
 
@@ -34,11 +46,24 @@ public interface Visitor<T, R> {
 
     R visit(NameTree nameTree, T data);
 
-    R visit(NegateTree negateTree, T data);
+    R visit(UnaryOperationTree unaryOperationTree, T data);
 
     R visit(ProgramTree programTree, T data);
 
     R visit(ReturnTree returnTree, T data);
 
     R visit(TypeTree typeTree, T data);
+
+    R visit(BreakTree breakTree, T data);
+
+    R visit(ContinueTree continueTree, T data);
+
+    R visit(ForTree forTree, T data);
+
+    R visit(ConditionalTree conditionalTree, T data);
+
+    R visit(WhileTree whileTree, T data);
+
+    R visit(TernaryOperationTree ternaryOperationTree, T data);
+
 }

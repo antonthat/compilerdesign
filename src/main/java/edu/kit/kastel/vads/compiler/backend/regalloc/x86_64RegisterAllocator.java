@@ -21,6 +21,7 @@ import edu.kit.kastel.vads.compiler.backend.regalloc.Register;
 import edu.kit.kastel.vads.compiler.backend.regalloc.X86_64Register;
 import edu.kit.kastel.vads.compiler.backend.regalloc.impl.MaximumCardinality;
 import edu.kit.kastel.vads.compiler.backend.regalloc.impl.GraphColorRegister;
+import edu.kit.kastel.vads.compiler.backend.aasm.VirtualRegister;
 
 // maybe relocate
 import edu.kit.kastel.vads.compiler.backend.optimization.Optimizer;

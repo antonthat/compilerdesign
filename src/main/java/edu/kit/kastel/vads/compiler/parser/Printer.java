@@ -3,19 +3,27 @@ package edu.kit.kastel.vads.compiler.parser;
 import edu.kit.kastel.vads.compiler.parser.ast.AssignmentTree;
 import edu.kit.kastel.vads.compiler.parser.ast.BinaryOperationTree;
 import edu.kit.kastel.vads.compiler.parser.ast.BlockTree;
+import edu.kit.kastel.vads.compiler.parser.ast.BoolLiteralTree;
+import edu.kit.kastel.vads.compiler.parser.ast.BreakTree;
+import edu.kit.kastel.vads.compiler.parser.ast.ContinueTree;
+import edu.kit.kastel.vads.compiler.parser.ast.ForTree;
 import edu.kit.kastel.vads.compiler.parser.ast.IdentExpressionTree;
+import edu.kit.kastel.vads.compiler.parser.ast.ConditionalTree;
 import edu.kit.kastel.vads.compiler.parser.ast.LValueIdentTree;
+import edu.kit.kastel.vads.compiler.parser.ast.BoolLiteralTree;
 import edu.kit.kastel.vads.compiler.parser.ast.LiteralTree;
 import edu.kit.kastel.vads.compiler.parser.ast.NameTree;
-import edu.kit.kastel.vads.compiler.parser.ast.NegateTree;
 import edu.kit.kastel.vads.compiler.parser.ast.ReturnTree;
+import edu.kit.kastel.vads.compiler.parser.ast.TernaryOperationTree;
 import edu.kit.kastel.vads.compiler.parser.ast.Tree;
 import edu.kit.kastel.vads.compiler.parser.ast.DeclarationTree;
 import edu.kit.kastel.vads.compiler.parser.ast.FunctionTree;
 import edu.kit.kastel.vads.compiler.parser.ast.ProgramTree;
 import edu.kit.kastel.vads.compiler.parser.ast.StatementTree;
 import edu.kit.kastel.vads.compiler.parser.ast.TypeTree;
+import edu.kit.kastel.vads.compiler.parser.ast.UnaryOperationTree;
 
+import edu.kit.kastel.vads.compiler.parser.ast.WhileTree;
 import java.util.List;
 
 /// This is a utility class to help with debugging the parser.
@@ -80,8 +88,10 @@ public class Printer {
                 print(")");
             }
             case LiteralTree(var value, _, _) -> this.builder.append(value);
-            case NegateTree(var expression, _) -> {
-                print("-(");
+            case BoolLiteralTree(var value,_) -> this.builder.append(value);
+            case UnaryOperationTree(var expression, var op, var _) -> {
+                this.builder.append(op);
+                print("(");
                 printTree(expression);
                 print(")");
             }
@@ -103,10 +113,65 @@ public class Printer {
                 }
                 semicolon();
             }
+            case ConditionalTree(var expr, var then, var orElse, _) -> {
+                print("if (");
+                printTree(expr);
+                print(")");
+                space();
+                printTree(then);
+                if (orElse != null) {
+                    print("else");
+                    space();
+                    printTree(orElse);
+                }
+                lineBreak();
+            }
             case ReturnTree(var expr, _) -> {
                 print("return ");
                 printTree(expr);
                 semicolon();
+            }
+            case WhileTree(var condition, var body, _) -> {
+                print("while (");
+                printTree(condition);
+                print(")");
+                space();
+                printTree(body);
+                lineBreak();
+            }
+            case TernaryOperationTree(var condition, var trueBranch, var falseBranch) -> {
+                printTree(condition);
+                print(" ? ");
+                printTree(trueBranch);
+                print(" : ");
+                printTree(falseBranch);
+                lineBreak();
+
+            }
+
+            case ForTree(var def, var cond, var step, var body, _) -> {
+                print("for");
+                if (def != null) {
+                    printTree(def);
+                }
+                print(";");
+                printTree(cond);
+                print(";");
+                if (step != null) {
+                    printTree(step);
+                }
+                print(")");
+                space();
+                printTree(body);
+                lineBreak();
+            }
+            case BreakTree(_) -> {
+                print("break");
+                lineBreak();
+            }
+            case ContinueTree(_) -> {
+                print("continue");
+                lineBreak();
             }
             case LValueIdentTree(var name) -> printTree(name);
             case IdentExpressionTree(var name) -> printTree(name);

@@ -47,4 +47,27 @@ public abstract class Operation {
             this.src = mapping.get(src);
         }
     }
+
+    public static String to8BitRegister(String reg32) {
+        switch (reg32) {
+            case "%eax": return "%al";
+            case "%ebx": return "%bl";
+            case "%ecx": return "%cl";
+            case "%edx": return "%dl";
+            case "%esi": return "%sil";
+            case "%edi": return "%dil";
+            case "%esp": return "%spl";
+            case "%ebp": return "%bpl";
+            case "%r8d":  return "%r8b";
+            case "%r9d":  return "%r9b";
+            case "%r10d": return "%r10b";
+            case "%r11d": return "%r11b";
+            case "%r12d": return "%r12b";
+            case "%r13d": return "%r13b";
+            case "%r14d": return "%r14b";
+            case "%r15d": return "%r15b";
+            default:
+                return reg32.toString();
+        }
+    }
 }
